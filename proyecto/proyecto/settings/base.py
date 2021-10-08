@@ -11,10 +11,11 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+from apps import *
+from unipath import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_DIR = Path(__file__).ancestor(3)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -38,7 +39,7 @@ DJANGO_APPS = [
 ]
 
 LOCAL_APPS = [
-    'apps.proyecto'
+    'apps.myapp',
 ]
 
 THIRD_PARTY_APPS = [
@@ -91,3 +92,5 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+# AUTH_USER_MODEL = 'user.Usuarios'
