@@ -21,4 +21,6 @@ urlpatterns = [
     #path(include('apps.myapp.urls')),
     path('admin/', admin.site.urls),
     path('', views.index),
+    path('registro/', views.registro),
+    path('login/', views.login),
 ]

@@ -7,3 +7,10 @@ from .models import Bitacora
 admin.site.register(TipoUsuario)
 admin.site.register(Usuario)
 admin.site.register(Bitacora)
+
+class Useradmin(admin.ModelAdmin):
+    fieldsets = (
+        ('User', {}),
+        
+
+    ) 
