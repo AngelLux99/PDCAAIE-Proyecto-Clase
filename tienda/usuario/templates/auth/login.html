@@ -67,11 +67,18 @@
 <body>
     <div class="sidenav">
         <div class="login-main-text">
-           <h2>Application<br> Inicio de Sesión</h2>
-           <p>Login or register from here to access.</p>
+           <h2>Bienvenido!<br> Inicio de Sesión</h2>
+           <p>Ingese su usuario y contraseña.</p>
         </div>
     </div>
     <div class="main">
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         <div class="col-md-6 col-sm-12">
             <div class="login-form">
                 <form action="" method="post" autocomplete="on">
