@@ -12,7 +12,7 @@ def login(request):
 
 def registro(request):
     if request.method == 'POST':
-        modelform = UsuarioForm(request.POST, request.FILES) 
+        modelform = (request.POST, request.FILES) 
         print(modelform.is_valid())
         if modelform.is_valid():
             tipo = TipoUsuario.objects.get(pk=1)

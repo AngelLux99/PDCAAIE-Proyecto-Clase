@@ -64,3 +64,19 @@ class FacturaForm(forms.ModelForm):
             'correo': forms.TextInput(attrs={'class': 'form-control'}),
             'direccion': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+class RegistroFormUpdate(forms.ModelForm):
+
+    class Meta:
+        model = Usuario
+        fields = ('id', 'nombre_completo','username','correo','edad', 'fotografia', 'contrasena')
+        exclude = ('tipo_usuario',)
+        widgets = {
+            'nombre_completo': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'correo': forms.TextInput(attrs={'class': 'form-control'}),
+            'edad': forms.TextInput(attrs={'class': 'form-control'}),
+            'fotografia': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'tipo_usuario': forms.Select(attrs={'class': 'form-control'}),
+            'contrasena': forms.PasswordInput(attrs={'class': 'form-control'}),
+        }

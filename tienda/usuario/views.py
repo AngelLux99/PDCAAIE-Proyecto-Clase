@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from localStoragePy import localStoragePy 
-from .forms import RegistroForm, LoginForm, LoginForm2, ProductoForm, Producto, FacturaForm
+from .forms import *
 from .models import *
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -14,6 +14,7 @@ import os
 import numpy as np
 import socket
 import sweetify
+import re
 
 #Face detector
 FACE_DETECTOR_PATH = "{base_path}\cascades\haarcascade_frontalface_default.xml".format(
@@ -25,23 +26,32 @@ import boto3
 import base64
 
 localStorage = localStoragePy('usuario', 'json')
-# Create your views here.
+# REGISTRO DE USUARIO
 def registro(request):
     if request.method == "POST":
         form = RegistroForm(request.POST, request.FILES)
         print(form.is_valid())
         if form.is_valid():
-            form.save()
             data = form.cleaned_data
-            username = data['username']
-            registrar_bitacora("Usuario registrado exitosamente.", Usuario.objects.get(username=username))
-            messages.add_message(request, level=messages.SUCCESS, message="Usuario Registrado con Exito")
-            return redirect('/login')
+            contrasena = data['contrasena']
+            pattern = r"^(?=.*\d)(?=.*[\u0021-\u002b\u003c-\u0040])(?=.*[A-Z])(?=.*[a-z])\S{12,16}$"
+            if re.match(pattern, contrasena):
+                form.save()
+                username = data['username']
+                registrar_bitacora("Usuario registrado exitosamente.", Usuario.objects.get(username=username))
+                messages.add_message(request, level=messages.SUCCESS, message="Usuario Registrado con Exito")
+                return redirect('/login')
+            else: 
+                messages.add_message(request, level=messages.ERROR, message="La contraseña no es válida")
+                return redirect('/registro')
     else:
         form = RegistroForm()
 
     return render(request, 'auth/registro.html', {'forms':form})
 
+
+
+##### LOGIN #####
 def login(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -73,6 +83,8 @@ def login(request):
                             return redirect('/list')
                         if(auth.tipo_usuario_id == 2):
                             return redirect('/productos')
+                        if(auth.tipo_usuario_id == 3):
+                            return redirect('/reportes')
                         else:    
                             return redirect('/home')
                     else:
@@ -81,28 +93,32 @@ def login(request):
                         auth.save()
                         registrar_bitacora("El usuario " + str(username) + " ha intentado ingresar al sistema.", auth)
                         
-                        messages.add_message(request, level=messages.SUCCESS, message="Contraseña incorrecta")
+                        messages.add_message(request, level=messages.ERROR, message="Contraseña incorrecta")
+                        if(auth.intentos < 3):
+                            return redirect('/login')
                         if(auth.intentos == 3):
                             #Motrar mensaje de advertencia
-                            messages.add_message(request, level=messages.SUCCESS, message="ADVERTENCIA: actualmente lleva 3 intentos para ingresar, a los 6 se bloqueara su usuario")
+                            messages.add_message(request, level=messages.WARNING, message="ADVERTENCIA: actualmente lleva 3 intentos para ingresar, a los 6 se bloqueara su usuario")
                             return redirect('/login')
                            
                         if(auth.intentos == 6):
-                            messages.add_message(request, level=messages.SUCCESS, message="Ha llegado al limite de intentos. Se ha bloqueado su usuario")
+                            messages.add_message(request, level=messages.ERROR, message="Ha llegado al limite de intentos. Se ha bloqueado su usuario")
                             registrar_bitacora("El usuario " + str(username) + " esta bloqueado actualmente.", auth)
                             return redirect('/login')
                             
                         # return redirect('/')
                 else:
-                    messages.add_message(request, level=messages.SUCCESS, message="USUARIO BLOQUEADO: Consulte con un usuario administrador para poder desbloquear su usuario")
+                    form = LoginForm()
+                    messages.add_message(request, level=messages.ERROR, message="USUARIO BLOQUEADO: Consulte con un usuario administrador para poder desbloquear su usuario")
                     return redirect('/login')
                     
             else:
+                form = LoginForm()
                 messages.add_message(request, level=messages.SUCCESS, message="Usuario incorrecto")
                 return redirect('/login')
     else:
         form = LoginForm()
-
+        
     return render(request, 'auth/login.html', {'forms_login':form})
 
 def login2(request):
@@ -130,8 +146,8 @@ def login2(request):
                         auth.intentos = auth.intentos + 1
                         auth.save()
                         registrar_bitacora("El usuario " + str(username) + " ha intentado ingresar al sistema.", auth)
-                        
                         messages.add_message(request, level=messages.SUCCESS, message="Usuario o Contraseña incorrecta")
+                        return redirect('/login')
                         if(auth.intentos == 3):
                             #Motrar mensaje de advertencia
                             messages.add_message(request, level=messages.SUCCESS, message="ADVERTENCIA: actualmente lleva 3 intentos para ingresar, a los 6 se bloqueara su usuario")
@@ -152,21 +168,54 @@ def login2(request):
                 return redirect('/login')
     else:
         form = LoginForm2()
-
-    return render(request, 'auth/login2.html', {'forms_login':form})
+        data = form.cleaned_data
+        return render(request, 'auth/login2.html', {'forms_login':form})
 
 def logout_view(request):
     #logout(request)
     localStorage.getItem("TipoUsuario")
     localStorage.removeItem("TipoUsuario")
     usuarioId = localStorage.getItem("UsuarioId")
-    #Bitacora.objects.get(usuario=usuarioId)
-    #registrar_bitacora("El usuario " + str(username) + " ha salido del sistema.", usuarioId)
+    usuario = Usuario.objects.get(pk=usuarioId)
+    registrar_bitacora("El usuario " + str(usuario.username) + " ha salido del sistema.", usuario)
     return redirect('/login')
-    
+
+##### EDICIÓN DE PERFIL #####
+def usuarioactual(request):
+    id2=localStorage.getItem("UsuarioId")
+    UsuarioA = {'UsuarioActual' : Usuario.objects.filter(pk=id2).first()}
+    return render(request, 'auth/adminhome.html', UsuarioA)
+
+def edicion(request, id):
+    if request.method == "POST":
+        id2=localStorage.getItem("UsuarioId")
+        Usuario2 = Usuario.objects.filter(pk=id2).first()
+        form = RegistroFormUpdate(request.POST, request.FILES, instance=Usuario2)
+        print(form.is_valid())
+        if form.is_valid():
+            data = form.cleaned_data
+            contrasena = data['contrasena']
+            pattern = r"^(?=.*\d)(?=.*[\u0021-\u002b\u003c-\u0040])(?=.*[A-Z])(?=.*[a-z])\S{12,16}$"
+            if re.match(pattern, contrasena):
+                form.save()
+                username = data['username']
+                registrar_bitacora("Usuario registrado exitosamente.", Usuario.objects.get(username=username))
+                messages.add_message(request, level=messages.SUCCESS, message="Información Actualizada con Exito")
+                return redirect('/editarperfil/' + id2)
+            else: 
+                messages.add_message(request, level=messages.ERROR, message="La contraseña no es válida")
+                return redirect('editarperfil/' + id2)
+    else:
+        id2=localStorage.getItem("UsuarioId")
+        Usuario2 = Usuario.objects.filter(pk=id2).first()
+        form = RegistroFormUpdate(instance=Usuario2)
+    return render(request, 'auth/editarperfil.html', {'forms':form, 'Usuario':Usuario2})
+
+##### FUNCIONES DE USUARIO ADMINISTRADOR #####     
 
 def listaregistro(request):
-    context = {'lista_registros' : Usuario.objects.all()}
+    idUsuario = localStorage.getItem("UsuarioId")
+    context = {'lista_registros' : Usuario.objects.all(), 'UsuarioActual' : Usuario.objects.filter(pk=idUsuario).first()}
     print(localStorage.getItem("TipoUsuario")) 
     TipoUsuario = localStorage.getItem("TipoUsuario")
     if(TipoUsuario == "1"):
@@ -176,19 +225,29 @@ def listaregistro(request):
     
     
 def eliminar(request, id):
-    Usuario2 = Usuario.objects.get(pk=id)
-    Usuario2.delete()
-    return redirect('/list')
+    usuarioId = localStorage.getItem("UsuarioId")
+    usuario = Usuario.objects.get(pk=usuarioId)
+    TipoUsuario = localStorage.getItem("TipoUsuario")
+    if(TipoUsuario == "1"):
+        Usuario2 = Usuario.objects.get(pk=id)
+        Usuario2.delete()
+        registrar_bitacora("El usuario " + str(usuario.username) + " ha eliminado al usuario " + Usuario2.username, usuario)
+        messages.add_message(request, level=messages.SUCCESS, message="El Usuario se ha eliminado")
+        return redirect('/list')
+    else:
+        return redirect('/login')
 
 def desbloquear(request, id):
     Usuario2 = Usuario.objects.get(pk=id)
     Usuario2.intentos = 0
     Usuario2.save()
+    messages.add_message(request, level=messages.SUCCESS, message="El Usuario se ha desbloqueado")
     #registrar_bitacora("Se ha desbloqueado el usuario " + str(username), Usuario.objects.get(username=username))
     return redirect('/list')
 
 def bitacora(request):
-    context2 = {'bitacora' : Bitacora.objects.all()}
+    idUsuario = localStorage.getItem("UsuarioId")
+    context2 = {'bitacora' : Bitacora.objects.all(), 'UsuarioActual' : Usuario.objects.filter(pk=idUsuario).first()}
     print(localStorage.getItem("TipoUsuario")) 
     TipoUsuario = localStorage.getItem("TipoUsuario")
     if(TipoUsuario == "1"):
@@ -206,6 +265,8 @@ def registrar_bitacora(descripcion, usuario):
     registro_bitacora.descripcion = descripcion
     registro_bitacora.usuario = usuario
     registro_bitacora.save()
+
+##### DETECCIÓN FACIAL #####
 
 @csrf_exempt
 def detect(request):
@@ -261,36 +322,54 @@ def _grab_image(path=None, stream=None, url=None):
 	# return the image
 	return image
 
+##### FUNCIONES DE VENDEDOR #####
 def agregarProducto(request):
-    if request.method == "POST":
-        form = ProductoForm(request.POST, request.FILES)
-        print(form.is_valid())
-        if form.is_valid():
-            form.save()
-            data = form.cleaned_data
-            #username = data['username']
-            #registrar_bitacora("Usuario registrado exitosamente.", Usuario.objects.get(username=username))
-            messages.add_message(request, level=messages.SUCCESS, message="Producto Registrado con Exito")
-            return redirect('/productos')
+    idUsuario = localStorage.getItem("UsuarioId")
+    TipoUsuario = localStorage.getItem("TipoUsuario")
+    usuario = Usuario.objects.get(pk=idUsuario)
+    if(TipoUsuario == "2"):
+        if request.method == "POST":
+            form = ProductoForm(request.POST, request.FILES)
+            print(form.is_valid())
+            if form.is_valid():
+                form.save()
+                data = form.cleaned_data
+                #username = data['username']
+                registrar_bitacora("Producto " + data['nombre'] + " registrado por el usuario: " + usuario.username, usuario)
+                messages.add_message(request, level=messages.SUCCESS, message="Producto Registrado con Exito")
+                return redirect('/productos')
+        else:
+            form = ProductoForm()
+
+        return render(request, 'auth/formProducto.html', {'forms':form, 'UsuarioActual' : Usuario.objects.filter(pk=idUsuario).first()})
     else:
-        form = ProductoForm()
+        return redirect('/login')
 
-    return render(request, 'auth/formProducto.html', {'forms':form})
-
+    
 def producto(request):
-    context3 = {'producto' : Producto.objects.all()}
-    return render(request, 'auth/Productos.html', context3)
-    #print(localStorage.getItem("TipoUsuario")) 
-    #TipoUsuario = localStorage.getItem("TipoUsuario")
-    #if(TipoUsuario == "1"):
-        #return render(request, 'auth/bitacora.html', context2)
-    #else:
-        #return redirect('/login')
-def eliminarProducto(request, id):
-    Producto2 = Producto.objects.get(pk=id)
-    Producto2.delete()
-    return redirect('/productos')
+    idUsuario = localStorage.getItem("UsuarioId")
+    context3 = {'producto' : Producto.objects.all(), 'UsuarioActual' : Usuario.objects.filter(pk=idUsuario).first()}
+    TipoUsuario = localStorage.getItem("TipoUsuario")
+    if(TipoUsuario == "2"):
+        return render(request, 'auth/Productos.html', context3)
+    else:
+        return redirect('/login')
 
+def eliminarProducto(request, id):
+    usuarioId = localStorage.getItem("UsuarioId")
+    usuario = Usuario.objects.get(pk=usuarioId)
+    
+    TipoUsuario = localStorage.getItem("TipoUsuario")
+    if(TipoUsuario == "2"):
+        Producto2 = Producto.objects.get(pk=id)
+        Producto2.delete()
+        registrar_bitacora("El usuario " + str(usuario.username) + " ha eliminado el producto " + Producto2.nombre, usuario)
+        messages.add_message(request, level=messages.SUCCESS, message="Se ha eliminado el Producto")
+        return redirect('/productos')
+    else:
+        return redirect('/login')
+    
+##### FUNCIONES DE CLIENTE #####
 def store(request):
     context3 = {'producto' : Producto.objects.all()}
     return render(request, 'auth/store.html', context3)
@@ -301,6 +380,9 @@ def agregarCarrito(request, id):
     cart.cantidad = 1
     cart.producto = Producto2
     cart.save()
+    # RESTAR AL STOCK DE PRODUCTO
+    Producto2.cantidad = Producto2.cantidad - 1
+    Producto2.save()
     return redirect('/store')
 
 def Micarrito(request):
@@ -315,6 +397,9 @@ def Micarrito(request):
 def quitarCarrito(request, id):
     cart = Carrito.objects.get(pk=id)
     cart.delete()
+    Producto2 = Producto.objects.get(pk=cart.producto.id)
+    Producto2.cantidad = Producto2.cantidad + 1
+    Producto2.save()
     return redirect('/micarrito')
 
 def compra(request):
@@ -357,12 +442,27 @@ def compra(request):
         form = FacturaForm(initial={'total': total})
     return render(request, 'auth/Compra.html', {'forms':form, 'carrito':carrito, 'total': total })
 
-def bitacora(request):
-    context2 = {'bitacora' : Bitacora.objects.all()}
-    print(localStorage.getItem("TipoUsuario")) 
+##### FUNCIONES DE REPORTES #####
+
+def reporte(request):
+    idUsuario = localStorage.getItem("UsuarioId")
+    context2 = {'reporte' : Factura.objects.all(), 'UsuarioActual' : Usuario.objects.filter(pk=idUsuario).first()}
     TipoUsuario = localStorage.getItem("TipoUsuario")
-    if(TipoUsuario == "1"):
-        return render(request, 'auth/bitacora.html', context2)
+    if(TipoUsuario == "3"):
+        return render(request, 'auth/reporte.html', context2)
     else:
-        return redirect('/login')
+        return redirect('/login') 
+    
+def reporteIndividual(request, id):
+    TipoUsuario = localStorage.getItem("TipoUsuario")
+    if(TipoUsuario == "3"):
+        factura = Factura.objects.get(pk=id)
+        detalleFactura = DetalleFactura.objects.all().filter(factura=factura)
+        total = 0
+        for item in detalleFactura:
+            total += item.producto.precio
+        context2 = {'factura' : factura, 'detalle': detalleFactura, 'total': total}
+        return render(request, 'auth/Factura.html', context2)
+    else:
+        return redirect('/login') 
     

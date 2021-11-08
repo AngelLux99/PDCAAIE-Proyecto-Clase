@@ -5,7 +5,7 @@ urlpatterns = [
     path('registro/', views.registro, name="registro"),
     path('login/', views.login, name="login"),
     path('login2/', views.login2, name="login2"),
-    path('', views.login, name="login1"),
+    path('', views.home, name="login1"),
     path('home/', views.home, name="home"),
     path('list/', views.listaregistro, name="Lista"),
     path('delete/<int:id>/', views.eliminar, name="Eliminar"),
@@ -21,5 +21,9 @@ urlpatterns = [
     path('micarrito/', views.Micarrito, name="MiCarrito"),
     path('quitarcarrito/<int:id>/', views.quitarCarrito, name="QuitarCarrito"),
     path('confirmarcompra/', views.compra, name="ConfirmarCompra"),
+    path('reportes/', views.reporte, name="ReporteFacturas"),
+    path('factura/<int:id>/', views.reporteIndividual, name="Factura"),
+    path('editarperfil/<int:id>/', views.edicion, name="Editarperfil"),
 
+     path('usuario/', views.usuarioactual, name="usuario"),
 ]

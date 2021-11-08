@@ -23,10 +23,10 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                        <a class="nav-link" aria-current="page" href="{% url 'home' %}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'store' %}">Mangas Y Comics</a>
+                        <a class="nav-link active" href="{% url 'store' %}">Mangas Y Comics</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'MiCarrito' %}">Tu carrito</a>
@@ -46,10 +46,16 @@
                 <div class="card-body">
                     <h5 class="card-title">{{item.nombre}}</h5>
                     <p class="card-text">{{item.descripcion}}</p>
+                    <p class="card-text">{{item.cantidad}}</p>
+                    {% if item.cantidad > 0 %}
                     <form action="{% url 'AgregarCarrito' item.id %}" method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-dark">Agregar al Carrito</button>
                     </form>
+                    {% endif %}
+                    {% if item.cantidad == 0 %}
+                        <button type="submit" disabled class="btn btn-secondary">No hay disponibilidad</button>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
