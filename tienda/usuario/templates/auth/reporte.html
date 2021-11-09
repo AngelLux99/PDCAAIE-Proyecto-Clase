@@ -14,7 +14,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Navbar</a>
+            <a class="navbar-brand" href="#">Ichiban Store</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
@@ -74,7 +74,7 @@
                     <td>{{factura.nombre}}</td>
                     <td>{{factura.nit}}</td>
                     <td>{{factura.fecha_hora}}</td>
-                    <td>{{factura.total}}</td>
+                    <td> Q. {{factura.total}}</td>
                     <td>
                     <td>
                         <form action="{% url 'Factura' factura.id %}" method="post" class="d-inline">

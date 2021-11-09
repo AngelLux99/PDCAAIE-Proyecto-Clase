@@ -1,0 +1,30 @@
+version: "3.9"
+# Declaracion de servicios
+services:
+  # Instancia de postgres
+  db:
+    # Descargamos imagen oficial de postgres
+    image: postgres
+    # Seteamos variables de entorno
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_DB: Proyecto
+      POSTGRES_PASSWORD: 1234
+    # Exponemos nuestro volumen de datos
+    volumes:
+      - pgdata:/var/lib/posgresql/data
+  # Instancia de django
+  frontend:
+    # Construimos la imagen de Dockerfile
+    build: ./tienda
+    # Se expone el puerto al exterior
+    ports:
+      - "8000:8000"
+    # Exponemos volumen de frontend
+    volumes:
+      - ./frontend:/frontend
+    # Depende de DB
+    depends_on:
+      - db
+volumes:
+  pgdata:

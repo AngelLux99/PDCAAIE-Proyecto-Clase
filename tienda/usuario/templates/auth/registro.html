@@ -33,11 +33,11 @@
 
         @media screen and (max-width: 450px) {
             .login-form {
-                margin-top: 10%;
+                margin-top: 5%;
             }
 
             .register-form {
-                margin-top: 10%;
+                margin-top: 5%;
             }
         }
 
@@ -64,7 +64,7 @@
         }
 
         .login-main-text {
-            margin-top: 20%;
+            margin-top: 15%;
             padding: 60px;
             color: #fff;
         }
@@ -110,13 +110,12 @@
             {% endfor %}
         </ul>
         {% endif %}
-        <div class="col-md-6 col-sm-12">
+        <div class="col-md-8 col-sm-12">
             <div class="login-form">
                 <form action="" method="post" autocomplete="on" enctype="multipart/form-data">
                     {% csrf_token %}
                     {{forms}}
-                    <p><small>La contraseña debe ser mayor a 12 caracteres debe contener letras y caracteres
-                            especiales.</small></p>
+                    <p><small>La contraseña debe tener al entre 12 y 16 caracteres, al menos un dígito, al menos una mayúscula y al menos un caracter especial.</small></p>
                     <button type="submit" class="btn btn-black mt-2">Registrar Usuario</button>
                     <a href="{% url 'login' %}" type="button" class="btn btn-secondary mt-2">Iniciar Sesión</a>
                 </form>

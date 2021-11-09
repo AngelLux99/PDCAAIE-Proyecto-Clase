@@ -8,7 +8,6 @@ idna==3.3
 jmespath==0.10.0
 localStoragePy==0.2.3    
 numpy==1.21.3
-opencv-python==4.5.4.58  
 Pillow==8.3.2
 psycopg2==2.9.1
 python-dateutil==2.8.2   

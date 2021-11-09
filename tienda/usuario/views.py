@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import urllib.request # python 3
 import json
-import cv2
+#import cv2
 import os
 import numpy as np
 import socket
@@ -114,7 +114,7 @@ def login(request):
                     
             else:
                 form = LoginForm()
-                messages.add_message(request, level=messages.SUCCESS, message="Usuario incorrecto")
+                messages.add_message(request, level=messages.ERROR, message="Usuario incorrecto")
                 return redirect('/login')
     else:
         form = LoginForm()
@@ -160,7 +160,7 @@ def login2(request):
                             
                         # return redirect('/')
                 else:
-                    messages.add_message(request, level=messages.SUCCESS, message="USUARIO BLOQUEADO: Consulte con un usuario administrador para poder desbloquear su usuario")
+                    messages.add_message(request, level=messages.ERROR, message="USUARIO BLOQUEADO: Consulte con un usuario administrador para poder desbloquear su usuario")
                     return redirect('/login')
                     
             else:
@@ -238,9 +238,12 @@ def eliminar(request, id):
         return redirect('/login')
 
 def desbloquear(request, id):
+    usuarioId = localStorage.getItem("UsuarioId")
+    usuario = Usuario.objects.get(pk=usuarioId)
     Usuario2 = Usuario.objects.get(pk=id)
     Usuario2.intentos = 0
     Usuario2.save()
+    registrar_bitacora("El usuario " + str(usuario.username) + " ha desbloqueado al usuario " + Usuario2.username, usuario)
     messages.add_message(request, level=messages.SUCCESS, message="El Usuario se ha desbloqueado")
     #registrar_bitacora("Se ha desbloqueado el usuario " + str(username), Usuario.objects.get(username=username))
     return redirect('/list')
@@ -268,7 +271,7 @@ def registrar_bitacora(descripcion, usuario):
 
 ##### DETECCIÓN FACIAL #####
 
-@csrf_exempt
+""" @csrf_exempt
 def detect(request):
 	# initialize the data dictionary to be returned by the request
 	data = {"success": False}
@@ -320,7 +323,7 @@ def _grab_image(path=None, stream=None, url=None):
 		image = cv2.imdecode(image, cv2.IMREAD_COLOR)
  
 	# return the image
-	return image
+	return image """
 
 ##### FUNCIONES DE VENDEDOR #####
 def agregarProducto(request):
@@ -348,7 +351,7 @@ def agregarProducto(request):
     
 def producto(request):
     idUsuario = localStorage.getItem("UsuarioId")
-    context3 = {'producto' : Producto.objects.all(), 'UsuarioActual' : Usuario.objects.filter(pk=idUsuario).first()}
+    context3 = {'producto' : Producto.objects.all().order_by('nombre'), 'UsuarioActual' : Usuario.objects.filter(pk=idUsuario).first()}
     TipoUsuario = localStorage.getItem("TipoUsuario")
     if(TipoUsuario == "2"):
         return render(request, 'auth/Productos.html', context3)
@@ -371,7 +374,7 @@ def eliminarProducto(request, id):
     
 ##### FUNCIONES DE CLIENTE #####
 def store(request):
-    context3 = {'producto' : Producto.objects.all()}
+    context3 = {'producto' : Producto.objects.all().order_by('nombre')}
     return render(request, 'auth/store.html', context3)
 
 def agregarCarrito(request, id):
@@ -426,6 +429,8 @@ def compra(request):
                 detalleFactura.producto = item.producto
                 detalleFactura.save()
             Carrito.objects.all().delete()
+            messages.add_message(request, level=messages.SUCCESS, message="Tu compra se entregará en los próximos 3 dias hábiles")
+            messages.add_message(request, level=messages.SUCCESS, message="Gracias por tu Compra!")
             return redirect('/home')
         """ if form.is_valid():
             form.save()

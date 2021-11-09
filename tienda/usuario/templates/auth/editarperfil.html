@@ -67,6 +67,7 @@
 <body>
     <div class="sidenav">
         <div class="login-main-text">
+            <img src="../../../media/usuarios/USAC-logo.png" width="400" height="auto">
            <h2>Proyecto<br> Edición de Usuario</h2>
         </div>
     </div>
@@ -97,6 +98,7 @@
                 <form action="" method="post" autocomplete="on" enctype="multipart/form-data">
                     {% csrf_token %}
                     {{forms}}
+                    <p><small>La contraseña debe tener al entre 12 y 16 caracteres, al menos un dígito, al menos una mayúscula y al menos un caracter especial.</small></p>
                     <button type="submit" class="btn btn-black mt-2">Guardar Cambios</button>
                 </form>
             </div>
